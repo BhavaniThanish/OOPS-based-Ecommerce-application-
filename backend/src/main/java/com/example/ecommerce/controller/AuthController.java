@@ -70,7 +70,7 @@ public class AuthController {
             return ResponseEntity.ok(Map.of("id", user.getId(), "name", user.getName(),
                     "email", user.getEmail(), "role", user.getRole()));
         } catch (Exception e) {
-            return ResponseEntity.unauthorized().build();
+            return ResponseEntity.status(401).build();
         }
     }
 }
