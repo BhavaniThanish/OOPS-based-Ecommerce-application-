@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { getMyOrders } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
-import { Package } from 'lucide-react';
 
-const STATUS_COLORS = {
-  PENDING: 'var(--yellow)', CONFIRMED: 'var(--blue)',
-  SHIPPED: 'var(--accent)', DELIVERED: 'var(--green)', CANCELLED: 'var(--red)'
+const STATUS_STYLES = {
+  PENDING:   { bg: '#fef3c7', color: '#92400e' },
+  CONFIRMED: { bg: '#dbeafe', color: '#1e40af' },
+  SHIPPED:   { bg: '#ede9fe', color: '#5b21b6' },
+  DELIVERED: { bg: '#d1fae5', color: '#065f46' },
+  CANCELLED: { bg: '#fee2e2', color: '#991b1b' },
 };
 
 export default function Orders() {
@@ -15,15 +17,14 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      getMyOrders().then(r => setOrders(r.data)).finally(() => setLoading(false));
-    } else setLoading(false);
+    if (user) getMyOrders().then(r => setOrders(r.data)).finally(() => setLoading(false));
+    else setLoading(false);
   }, [user]);
 
   if (!user) return (
     <div className="page"><div className="container" style={{ paddingTop: 60 }}>
       <div className="empty-state">
-        <div className="empty-icon">🔒</div>
+        <span className="empty-icon">🔒</span>
         <div className="empty-title">Login Required</div>
         <Link to="/login" className="btn btn-primary">Login</Link>
       </div>
@@ -34,52 +35,61 @@ export default function Orders() {
 
   return (
     <div className="page">
-      <div className="container" style={{ paddingTop: 40 }}>
-        <div className="section-header">
-          <div className="section-label">My Account</div>
-          <h1 className="section-title">My Orders</h1>
+      {/* Header */}
+      <div style={{ background: 'var(--charcoal)', paddingTop: 64, paddingBottom: 40 }}>
+        <div className="container">
+          <p style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--gold)', marginBottom: 8 }}>My Account</p>
+          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 'clamp(2rem, 5vw, 4rem)', fontWeight: 900, textTransform: 'uppercase', color: 'white', lineHeight: 1 }}>
+            Order History
+          </h1>
         </div>
+      </div>
+
+      <div className="container" style={{ paddingTop: 40, paddingBottom: 80 }}>
         {orders.length === 0 ? (
           <div className="empty-state">
-            <Package size={64} style={{ opacity: 0.3, margin: '0 auto 20px', display: 'block' }} />
-            <div className="empty-title">No orders yet</div>
-            <div className="empty-subtitle">Start shopping to see your orders here</div>
+            <span className="empty-icon">📦</span>
+            <div className="empty-title">No Orders Yet</div>
+            <p className="empty-sub">Start shopping to see your orders here</p>
             <Link to="/products" className="btn btn-primary">Shop Now</Link>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {orders.map(order => (
-              <div key={order.id} className="card" style={{ padding: 28 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: 4 }}>Order #{order.id?.slice(-8).toUpperCase()}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                      {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+          <div>
+            {orders.map(order => {
+              const ss = STATUS_STYLES[order.status] || { bg: '#f3f4f6', color: '#374151' };
+              return (
+                <div key={order.id} className="order-card">
+                  <div className="order-card-head">
+                    <div>
+                      <div className="order-id">Order #{order.id?.slice(-8).toUpperCase()}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: 3 }}>
+                        {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                      <span className="status-chip" style={{ background: ss.bg, color: ss.color }}>{order.status}</span>
+                      <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: '1.8rem', fontWeight: 900, color: 'var(--charcoal)' }}>
+                        ₹{order.totalAmount?.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                      </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-                    <span style={{ color: STATUS_COLORS[order.status] || 'var(--text-muted)', fontWeight: 700, fontSize: '0.85rem', background: `${STATUS_COLORS[order.status]}22`, padding: '5px 12px', borderRadius: 20, border: `1px solid ${STATUS_COLORS[order.status]}44` }}>
-                      {order.status}
-                    </span>
-                    <div style={{ fontWeight: 800, fontSize: '1.2rem' }}>
-                      ₹{order.totalAmount?.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                  <div style={{ padding: '20px 24px' }}>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: order.totalSavings > 0 ? 12 : 0 }}>
+                      {order.items?.map((item, i) => (
+                        <span key={i} style={{ background: 'var(--cream)', border: '1px solid var(--border)', padding: '6px 14px', fontSize: '0.82rem', fontWeight: 600, borderRadius: '2px' }}>
+                          {item.productName} × {item.quantity}
+                        </span>
+                      ))}
                     </div>
+                    {order.totalSavings > 0 && (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#d1fae5', color: '#065f46', padding: '6px 14px', fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                        💰 OOP Discounts saved you ₹{order.totalSavings?.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  {order.items?.map((item, i) => (
-                    <div key={i} style={{ background: 'var(--bg-secondary)', padding: '8px 14px', borderRadius: 8, fontSize: '0.85rem' }}>
-                      {item.productName} × {item.quantity}
-                    </div>
-                  ))}
-                </div>
-                {order.totalSavings > 0 && (
-                  <div style={{ marginTop: 12, color: 'var(--green)', fontSize: '0.85rem', fontWeight: 600 }}>
-                    💰 You saved ₹{order.totalSavings?.toLocaleString('en-IN', { maximumFractionDigits: 0 })} with OOP discounts!
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

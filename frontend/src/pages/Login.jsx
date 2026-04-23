@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { login } from '../api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { LogIn } from 'lucide-react';
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -21,32 +20,30 @@ export default function Login() {
       navigate('/');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-logo">
-          <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>⚡</div>
-          <h1 className="auth-title">Welcome back</h1>
-          <p className="auth-subtitle">Sign in to your OOP Shop account</p>
-        </div>
+    <div className="auth-page" style={{ paddingTop: 64 }}>
+      <div className="auth-panel">
+        <div className="auth-logo-bar">OOP<span>Shop</span></div>
+        <div className="auth-title">Sign In</div>
+        <p className="auth-subtitle">Access your account to shop and track orders</p>
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Email</label>
+            <label className="form-label">Email Address</label>
             <input className="form-input" type="email" placeholder="you@example.com" required
               value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
           </div>
           <div className="form-group">
             <label className="form-label">Password</label>
-            <input className="form-input" type="password" placeholder="••••••••" required
+            <input className="form-input" type="password" placeholder="Your password" required
               value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
           </div>
-          <button className="btn btn-primary w-full" type="submit" disabled={loading} style={{ justifyContent: 'center', padding: '14px' }}>
-            <LogIn size={17} /> {loading ? 'Signing in...' : 'Sign In'}
+          <button className="btn btn-primary w-full" type="submit" disabled={loading}
+            style={{ padding: '15px', marginTop: 8, justifyContent: 'center' }}>
+            {loading ? 'Signing In...' : 'Sign In →'}
           </button>
         </form>
         <div className="auth-footer">

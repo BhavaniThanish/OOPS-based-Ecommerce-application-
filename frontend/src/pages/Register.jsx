@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { register } from '../api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { UserPlus } from 'lucide-react';
 
 export default function Register() {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
@@ -17,41 +16,39 @@ export default function Register() {
     try {
       const res = await register(form);
       loginUser(res.data.token, res.data.user);
-      toast.success(`Welcome, ${res.data.user.name}! 🎉`);
+      toast.success(`Welcome to OOP Shop, ${res.data.user.name}!`);
       navigate('/');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Registration failed');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-logo">
-          <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>⚡</div>
-          <h1 className="auth-title">Create Account</h1>
-          <p className="auth-subtitle">Join OOP Shop today</p>
-        </div>
+    <div className="auth-page" style={{ paddingTop: 64 }}>
+      <div className="auth-panel">
+        <div className="auth-logo-bar">OOP<span>Shop</span></div>
+        <div className="auth-title">Create Account</div>
+        <p className="auth-subtitle">Join OOP Shop to start shopping and tracking orders</p>
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">Full Name</label>
-            <input className="form-input" type="text" placeholder="Bhavani Thanish" required
+            <input className="form-input" type="text" placeholder="Your name" required
               value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
           </div>
           <div className="form-group">
-            <label className="form-label">Email</label>
+            <label className="form-label">Email Address</label>
             <input className="form-input" type="email" placeholder="you@example.com" required
               value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
           </div>
           <div className="form-group">
             <label className="form-label">Password</label>
-            <input className="form-input" type="password" placeholder="Min. 6 characters" required minLength={6}
+            <input className="form-input" type="password" placeholder="Minimum 6 characters" required minLength={6}
               value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
           </div>
-          <button className="btn btn-primary w-full" type="submit" disabled={loading} style={{ justifyContent: 'center', padding: '14px' }}>
-            <UserPlus size={17} /> {loading ? 'Creating account...' : 'Create Account'}
+          <button className="btn btn-primary w-full" type="submit" disabled={loading}
+            style={{ padding: '15px', marginTop: 8, justifyContent: 'center' }}>
+            {loading ? 'Creating Account...' : 'Create Account →'}
           </button>
         </form>
         <div className="auth-footer">

@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getProduct } from '../api';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { ShoppingCart, ArrowLeft, Package, Truck } from 'lucide-react';
-
-const TYPE_BADGE_CLASS = { ELECTRONICS: 'badge-electronics', CLOTHING: 'badge-clothing', FOOD: 'badge-food' };
+import { ChevronRight } from 'lucide-react';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -18,7 +16,10 @@ export default function ProductDetail() {
   const [qty, setQty] = useState(1);
 
   useEffect(() => {
-    getProduct(id).then(r => setProduct(r.data)).catch(() => navigate('/products')).finally(() => setLoading(false));
+    getProduct(id)
+      .then(r => setProduct(r.data))
+      .catch(() => navigate('/products'))
+      .finally(() => setLoading(false));
   }, [id]);
 
   const handleAdd = async () => {
@@ -30,74 +31,98 @@ export default function ProductDetail() {
   if (loading) return <div className="page"><div className="spinner" /></div>;
   if (!product) return null;
 
-  const discount = product.discountAmount;
-  const oopNote = {
-    ELECTRONICS: 'Electronics.calculateDiscount() → 10% off (Polymorphism)',
-    CLOTHING: 'Clothing.calculateDiscount() → 20% off (Polymorphism)',
-    FOOD: 'FoodProduct.calculateDiscount() → 5–7% off (Polymorphism)',
-  }[product.type];
+  const oopNotes = {
+    ELECTRONICS: 'Electronics.calculateDiscount() → returns 10% of price',
+    CLOTHING: 'Clothing.calculateDiscount() → returns 20% of price',
+    FOOD: 'FoodProduct.calculateDiscount() → returns 5% base + 2% if organic',
+  };
+
+  const specs = [
+    { key: 'Type', val: product.type },
+    { key: 'Stock', val: product.stock > 0 ? `${product.stock} units available` : 'Out of stock' },
+    product.brand && { key: 'Brand', val: product.brand },
+    product.warrantyMonths && { key: 'Warranty', val: `${product.warrantyMonths} months` },
+    product.size && { key: 'Size', val: product.size },
+    product.color && { key: 'Color', val: product.color },
+    product.material && { key: 'Material', val: product.material },
+    product.weightKg && { key: 'Weight', val: `${product.weightKg} kg` },
+    product.isOrganic !== null && product.isOrganic !== undefined && { key: 'Organic', val: product.isOrganic ? 'Yes (+2% extra discount)' : 'No' },
+    product.shippingCost !== null && { key: 'Shipping', val: product.eligibleForFreeShipping ? 'Free Shipping' : `₹${product.shippingCost}` },
+  ].filter(Boolean);
 
   return (
     <div className="page">
       <div className="container">
-        <button className="btn btn-secondary btn-sm" style={{ marginBottom: 24, marginTop: 20 }} onClick={() => navigate(-1)}>
-          <ArrowLeft size={15} /> Back
-        </button>
+        {/* Breadcrumb */}
+        <div className="detail-breadcrumb">
+          <Link to="/">Home</Link>
+          <ChevronRight size={12} />
+          <Link to="/products">Products</Link>
+          <ChevronRight size={12} />
+          <span style={{ color: 'var(--charcoal)', fontWeight: 600 }}>{product.name}</span>
+        </div>
+
         <div className="detail-layout">
-          <div>
+          {/* Image */}
+          <div className="detail-img-wrap">
             <img
-              src={product.imageUrl || `https://picsum.photos/seed/${id}/600/450`}
+              src={product.imageUrl || `https://picsum.photos/seed/${id}/700/500`}
               alt={product.name}
               className="detail-img"
             />
           </div>
-          <div>
-            <span className={`product-type-badge ${TYPE_BADGE_CLASS[product.type]}`}>{product.type}</span>
-            <h1 style={{ fontSize: '1.9rem', fontWeight: 900, marginBottom: 8, letterSpacing: -0.5 }}>{product.name}</h1>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>{product.description}</p>
 
-            <div style={{ marginBottom: 24 }}>
+          {/* Info */}
+          <div>
+            <span className="detail-category-tag">{product.type}</span>
+            <h1 className="detail-title">{product.name}</h1>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.7, marginBottom: 24 }}>
+              {product.description}
+            </p>
+
+            {/* Price */}
+            <div style={{ marginBottom: 4 }}>
               <div className="detail-price">
                 ₹{product.finalPrice?.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
               </div>
-              {discount > 0 && (
+              {product.discountAmount > 0 && (
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 8 }}>
                   <span className="detail-original">₹{product.price?.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
-                  <span className="product-discount-badge">{product.discountPercentage?.toFixed(0)}% OFF</span>
-                  <span style={{ color: 'var(--green)', fontWeight: 600, fontSize: '0.9rem' }}>
-                    Save ₹{discount?.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                  <span className="product-discount-badge">Save {product.discountPercentage?.toFixed(0)}%</span>
+                  <span style={{ color: 'var(--forest-mid)', fontWeight: 700, fontSize: '0.88rem' }}>
+                    You save ₹{product.discountAmount?.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                   </span>
                 </div>
               )}
             </div>
 
-            {/* OOP Note */}
-            <div style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.25)', borderRadius: 12, padding: '14px 18px', marginBottom: 24 }}>
-              <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent-bright)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>OOP Concept</div>
-              <code style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{oopNote}</code>
+            {/* OOP Concept Tag */}
+            <div className="oop-tag">
+              <div className="oop-tag-label">OOP Concept — Polymorphism</div>
+              <div className="oop-tag-code">{oopNotes[product.type]}</div>
             </div>
 
             {/* Specs */}
-            <div style={{ marginBottom: 28 }}>
-              <div className="spec-row"><span className="spec-key">In Stock</span><span className="spec-value" style={{ color: product.stock > 0 ? 'var(--green)' : 'var(--red)' }}>{product.stock > 0 ? `${product.stock} units` : 'Out of stock'}</span></div>
-              {product.brand && <div className="spec-row"><span className="spec-key">Brand</span><span className="spec-value">{product.brand}</span></div>}
-              {product.warrantyMonths && <div className="spec-row"><span className="spec-key">Warranty</span><span className="spec-value">{product.warrantyMonths} months</span></div>}
-              {product.size && <div className="spec-row"><span className="spec-key">Size</span><span className="spec-value">{product.size}</span></div>}
-              {product.color && <div className="spec-row"><span className="spec-key">Color</span><span className="spec-value">{product.color}</span></div>}
-              {product.material && <div className="spec-row"><span className="spec-key">Material</span><span className="spec-value">{product.material}</span></div>}
-              {product.weightKg && <div className="spec-row"><span className="spec-key">Weight</span><span className="spec-value">{product.weightKg} kg</span></div>}
-              {product.isOrganic !== null && product.isOrganic !== undefined && <div className="spec-row"><span className="spec-key">Organic</span><span className="spec-value">{product.isOrganic ? '✅ Yes' : '❌ No'}</span></div>}
-              {product.shippingCost !== null && <div className="spec-row"><span className="spec-key"><Truck size={13} style={{display:'inline',marginRight:4}}/>Shipping</span><span className="spec-value">{product.eligibleForFreeShipping ? '🎉 Free Shipping' : `₹${product.shippingCost}`}</span></div>}
-            </div>
+            <table className="spec-table">
+              <tbody>
+                {specs.map(s => (
+                  <tr key={s.key}>
+                    <td className="spec-key">{s.key}</td>
+                    <td className="spec-val">{s.val}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            {/* Quantity + Add */}
+            <div className="qty-add-row">
               <div className="cart-quantity">
                 <button className="qty-btn" onClick={() => setQty(q => Math.max(1, q - 1))}>−</button>
-                <span className="qty-value">{qty}</span>
+                <span className="qty-value" style={{ minWidth: 32, textAlign: 'center', fontSize: '1rem', fontWeight: 800 }}>{qty}</span>
                 <button className="qty-btn" onClick={() => setQty(q => q + 1)}>+</button>
               </div>
               <button className="btn btn-primary btn-lg" onClick={handleAdd} style={{ flex: 1 }}>
-                <ShoppingCart size={18} /> Add to Cart
+                + Add to Cart
               </button>
             </div>
           </div>
